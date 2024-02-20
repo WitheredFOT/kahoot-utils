@@ -1,0 +1,99 @@
+// ==UserScript==
+// @name         Kahoot Utils
+// @namespace    http://tampermonkey.net/
+// @version      b0.1
+// @description  Helps you study questions in kahoot.
+// @author       DanSavageGames
+// @match        https://kahoot.it/
+// @icon         https://www.google.com/s2/favicons?sz=64&domain=kahoot.it
+// @grant        none
+// @require      https://raw.githubusercontent.com/eligrey/FileSaver.js/master/dist/FileSaver.min.js
+// ==/UserScript==
+
+(function() {
+
+    // Credits
+    var credits = ["https://github.com/Yuvix25/kahoot-answer-bot/tree/main/js", "https://greasyfork.org/en/scripts/425312-kaboot-modified"]
+
+    // Keycode Variables
+    var key1 = 50
+    var key2 = 51
+    var key3 = 52
+    var key4 = 53
+
+    // Key Answer Triggers (Default 1, 2, 3, 4)
+    document.addEventListener('keydown', e => {
+        if (event.isComposing || e.keyCode == key1) {
+            document.querySelector('[data-functional-selector="answer-0"]').click();
+        }if (event.isComposing || e.keyCode == key2) {
+            document.querySelector('[data-functional-selector="answer-1"]').click();
+        }if (event.isComposing || e.keyCode == key3) {
+            document.querySelector('[data-functional-selector="answer-2"]').click();
+        }if (event.isComposing || e.keyCode == key4) {
+            document.querySelector('[data-functional-selector="answer-3"]').click();
+    }});
+
+    // Remember Kahoot Question, Your Answer, and The Answer
+    // Log what you answered and whether it's correct (T/F)
+    // If the answer is correct, toast "Correct! :checkmark:" if not, "Incorrect! :redX:"
+    // Write all those to a .txt file named "Kahoot-[Name]-[Number] Study File"
+})
+
+
+
+chrome.tabs.onUpdated.addListener(function(tabId, changeInfo, tab) {
+    if (changeInfo.status == 'complete') {
+        if (tab.url.indexOf('kahoot.it') > -1) {
+            attachScript(tabId, ['./js/explorer.js', './js/content.js', './js/index.js']);
+            attachStyle(tabId, ['./css/index.css']);
+        }
+    }
+});
+
+async function getAnswers(uuid) {
+    const response = await (await fetch(`https://create.kahoot.it/rest/kahoots/${uuid}/card/?includeKahoot=true`)).json();
+    const questions = response.kahoot.questions;
+
+    const res = [];
+    for (const q of questions) {
+        for (let i = 0; i < q.choices.length; i++) {
+            if (q.choices[i].correct) {
+                res.push(i);
+                break;
+            }
+        }
+    }
+    return res;
+}
+
+function attachScript(tabId, scripts, args=[], force = false) {
+    chrome.scripting.executeScript({
+        target: {tabId: tabId},
+        func: () => {
+            return typeof attachContentScript === 'undefined' ? false : true;
+        }
+    }, (results) => {
+        if (results[0].result === false) {
+            chrome.scripting.executeScript({
+                target: {tabId: tabId},
+                files: scripts
+            });
+        }
+        if (force) {
+            chrome.scripting.executeScript({
+                target: {tabId: tabId},
+                func: (...args) => {
+                    attachContentScript(...args);
+                },
+                args: args
+            });
+        }
+    });
+}
+
+function attachStyle(tabId, styles) {
+    chrome.scripting.insertCSS({
+        target: {tabId: tabId},
+        files: styles
+    });
+};
