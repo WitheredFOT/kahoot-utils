@@ -18,10 +18,10 @@
 
     // Keycode Variables
     const keyMap = {
-        50: 1,
-        51: 2,
-        52: 3,
-        53: 4
+        38: 1, // Top Left
+        39: 2, // Top Right
+        40: 3, // Bottom Left
+        41: 4  // Bottom Right
     };
 
     // Key Answer Triggers
